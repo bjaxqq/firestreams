@@ -23,7 +23,7 @@ class MatchCardPresenter : Presenter() {
         card.titleText = match.title
         card.contentText = match.category.replaceFirstChar { it.uppercase() }
         card.badgeImage = if (match.isLive) {
-            card.context.getDrawable(android.R.drawable.presence_online)
+            card.context.getDrawable(com.firestreams.R.drawable.live_badge)
         } else null
 
         if (!match.poster.isNullOrEmpty()) {
