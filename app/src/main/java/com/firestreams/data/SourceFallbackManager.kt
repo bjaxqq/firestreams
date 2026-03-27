@@ -1,6 +1,10 @@
 package com.firestreams.data
 
 class SourceFallbackManager(private val sources: List<Source>) {
+    init {
+        require(sources.isNotEmpty()) { "SourceFallbackManager requires at least one source" }
+    }
+
     private var index = 0
 
     fun current(): Source = sources[index]

@@ -9,6 +9,7 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import okhttp3.OkHttpClient
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Loads an embedUrl in a WebView, injects a hook to intercept the JW Player setup call,
@@ -24,15 +25,15 @@ class StreamResolver(
 ) {
     private val webView: WebView = WebView(context)
     private val handler = Handler(Looper.getMainLooper())
-    private var resolved = false
+    private val resolved = AtomicBoolean(false)
 
     private val timeoutRunnable = Runnable {
-        if (!resolved) onFailed()
+        if (!resolved.get()) onFailed()
     }
 
     @SuppressLint("SetJavaScriptEnabled")
     fun resolve(embedUrl: String) {
-        resolved = false
+        resolved.set(false)
         handler.postDelayed(timeoutRunnable, 20_000)
 
         webView.settings.apply {
@@ -45,8 +46,8 @@ class StreamResolver(
         webView.addJavascriptInterface(object {
             @android.webkit.JavascriptInterface
             fun onStreamUrl(url: String) {
-                if (resolved) return
-                resolved = true
+                if (resolved.get()) return
+                resolved.set(true)
                 handler.removeCallbacks(timeoutRunnable)
                 handler.post { onResolved(url, embedUrl) }
             }
@@ -59,8 +60,8 @@ class StreamResolver(
             ): WebResourceResponse? {
                 val reqUrl = request.url.toString()
 
-                if ((reqUrl.contains(".m3u8") || reqUrl.contains(".mpd")) && !resolved) {
-                    resolved = true
+                if ((reqUrl.contains(".m3u8") || reqUrl.contains(".mpd")) && !resolved.get()) {
+                    resolved.set(true)
                     handler.removeCallbacks(timeoutRunnable)
                     handler.post { onResolved(reqUrl, embedUrl) }
                 }
