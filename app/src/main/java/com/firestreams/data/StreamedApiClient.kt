@@ -44,7 +44,8 @@ class StreamedApiClient(private val http: OkHttpClient) {
                     id = o.optString("id", ""),
                     title = o.optString("title", "Unknown"),
                     category = o.optString("category", ""),
-                    poster = o.optString("poster").ifEmpty { null },
+                    poster = o.optString("poster").ifEmpty { null }
+                        ?.let { if (it.startsWith("http")) it else "https://streamed.pk$it" },
                     sources = sources,
                     isLive = isLive,
                     startTime = if (o.has("startTime")) o.getLong("startTime") else null
