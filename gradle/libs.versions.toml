@@ -30,6 +30,7 @@ leanback = { group = "androidx.leanback", name = "leanback", version.ref = "lean
 glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
 lifecycle-viewmodel = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
 lifecycle-runtime = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
+json = { group = "org.json", name = "json", version = "20240303" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
