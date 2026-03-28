@@ -1,4 +1,40 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Theme.Firestreams" parent="Theme.Leanback" />
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Firestreams" parent="Theme.Leanback">
+        <item name="android:windowBackground">@color/bg_primary</item>
+        <item name="android:colorBackground">@color/bg_primary</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+    </style>
+
+    <style name="TextAppearance.Firestreams.Title" parent="@android:style/TextAppearance">
+        <item name="android:textSize">28sp</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:fontFamily">sans-serif-light</item>
+        <item name="android:letterSpacing">0.02</item>
+    </style>
+
+    <style name="TextAppearance.Firestreams.Body" parent="@android:style/TextAppearance">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:letterSpacing">0.04</item>
+    </style>
+
+    <style name="Animation.SourcePicker" parent="android:Animation">
+        <item name="android:windowEnterAnimation">@anim/picker_slide_in</item>
+        <item name="android:windowExitAnimation">@anim/picker_slide_out</item>
+    </style>
+
+    <style name="Widget.Firestreams.Button" parent="@android:style/Widget.Button">
+        <item name="android:textColor">@color/bg_primary</item>
+        <item name="android:background">@color/text_primary</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">0.08</item>
+        <item name="android:paddingStart">32dp</item>
+        <item name="android:paddingEnd">32dp</item>
+        <item name="android:paddingTop">12dp</item>
+        <item name="android:paddingBottom">12dp</item>
+    </style>
 </resources>

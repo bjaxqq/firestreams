@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/card_frame"
+        android:layout_width="280dp"
+        android:layout_height="158dp"
+        android:layout_marginEnd="14dp"
+        android:background="@drawable/card_bg"
+        android:clipToOutline="true"
+        android:elevation="8dp"
+        android:focusable="true"
+        android:focusableInTouchMode="true">
+
+        <ImageView
+            android:id="@+id/card_image"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop" />
+
+        <!-- Bottom scrim for badge legibility -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_gravity="bottom"
+            android:background="@drawable/card_image_scrim" />
+
+        <TextView
+            android:id="@+id/card_live_badge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|start"
+            android:layout_margin="8dp"
+            android:background="@drawable/live_pill"
+            android:fontFamily="sans-serif-medium"
+            android:letterSpacing="0.1"
+            android:paddingStart="7dp"
+            android:paddingEnd="7dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:text="LIVE"
+            android:textColor="@color/text_primary"
+            android:textSize="9sp"
+            android:visibility="gone" />
+
+
+</FrameLayout>

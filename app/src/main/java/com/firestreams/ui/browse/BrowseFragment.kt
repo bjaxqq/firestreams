@@ -2,14 +2,14 @@ package com.firestreams.ui.browse
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import androidx.leanback.app.BrowseSupportFragment
 import androidx.leanback.widget.*
 import androidx.lifecycle.lifecycleScope
 import com.firestreams.data.Match
 import com.firestreams.data.StreamedApiClient
+import com.firestreams.ui.SoundManager
 import com.firestreams.ui.details.DetailsActivity
-import com.firestreams.ui.multistream.MultiStreamActivity
-import com.firestreams.ui.search.SearchActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -18,57 +18,51 @@ import okhttp3.OkHttpClient
 class BrowseFragment : BrowseSupportFragment() {
 
     private val api by lazy { StreamedApiClient(OkHttpClient()) }
-    private val rowsAdapter = ArrayObjectAdapter(ListRowPresenter())
+    private val rowsAdapter = ArrayObjectAdapter(ListRowPresenter().also {
+        it.shadowEnabled = false
+    })
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        title = "Firestreams"
-        headersState = HEADERS_ENABLED
-        isHeadersTransitionOnBackEnabled = true
+        title = ""
+        headersState = HEADERS_DISABLED
+        isHeadersTransitionOnBackEnabled = false
+        brandColor = android.graphics.Color.parseColor("#000000")
         adapter = rowsAdapter
 
-        setOnSearchClickedListener {
-            startActivity(Intent(requireContext(), SearchActivity::class.java))
+        setOnItemViewSelectedListener { _, _, _, _ ->
+            SoundManager.playFocus()
         }
 
-        setOnItemViewClickedListener { _, item, _, row ->
-            // Check if this is the Multi-Stream button row
-            if ((row as? ListRow)?.headerItem?.name == "Multi-Stream") {
-                startActivity(Intent(requireContext(), MultiStreamActivity::class.java))
-                return@setOnItemViewClickedListener
-            }
-
-            if (item is Match) {
-                val multistreamSlot = requireActivity().intent.getIntExtra(
-                    BrowseActivity.EXTRA_MULTISTREAM_SLOT, -1)
-
-                if (multistreamSlot >= 0) {
-                    // We were picking for a multistream slot — go back to MultiStreamActivity
-                    val intent = Intent(requireContext(), MultiStreamActivity::class.java).apply {
-                        putExtra(MultiStreamActivity.EXTRA_SLOT, multistreamSlot)
-                        putExtra(MultiStreamActivity.EXTRA_TITLE, item.title)
-                        putExtra(MultiStreamActivity.EXTRA_SOURCES,
-                            item.sources.map { "${it.source}:${it.id}" }.toTypedArray())
-                        flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    }
-                    startActivity(intent)
-                } else {
-                    // Normal flow → details
-                    val intent = Intent(requireContext(), DetailsActivity::class.java).apply {
-                        putExtra(DetailsActivity.EXTRA_MATCH_ID, item.id)
-                        putExtra(DetailsActivity.EXTRA_MATCH_TITLE, item.title)
-                        putExtra(DetailsActivity.EXTRA_MATCH_CATEGORY, item.category)
-                        putExtra(DetailsActivity.EXTRA_MATCH_POSTER, item.poster)
-                        putExtra(DetailsActivity.EXTRA_MATCH_IS_LIVE, item.isLive)
-                        putExtra(DetailsActivity.EXTRA_MATCH_SOURCES,
-                            item.sources.map { "${it.source}:${it.id}" }.toTypedArray())
-                    }
-                    startActivity(intent)
+        setOnItemViewClickedListener { _, item, _, _ ->
+            when (item) {
+                is Match -> {
+                    SoundManager.playSelect()
+                    openDetails(item)
                 }
             }
         }
 
         loadContent()
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        // Hide the Leanback search orb
+        view.findViewById<View>(androidx.leanback.R.id.title_orb)?.visibility = View.GONE
+    }
+
+    private fun openDetails(match: Match) {
+        val intent = Intent(requireContext(), DetailsActivity::class.java).apply {
+            putExtra(DetailsActivity.EXTRA_MATCH_ID, match.id)
+            putExtra(DetailsActivity.EXTRA_MATCH_TITLE, match.title)
+            putExtra(DetailsActivity.EXTRA_MATCH_CATEGORY, match.category)
+            putExtra(DetailsActivity.EXTRA_MATCH_POSTER, match.poster)
+            putExtra(DetailsActivity.EXTRA_MATCH_IS_LIVE, match.isLive)
+            putExtra(DetailsActivity.EXTRA_MATCH_SOURCES,
+                match.sources.map { "${it.source}:${it.id}" }.toTypedArray())
+        }
+        startActivity(intent)
     }
 
     private fun loadContent() {
@@ -79,26 +73,19 @@ class BrowseFragment : BrowseSupportFragment() {
 
             rowsAdapter.clear()
 
-            // Multi-Stream entry row
-            val multiStreamEntryAdapter = ArrayObjectAdapter(object : Presenter() {
-                override fun onCreateViewHolder(parent: android.view.ViewGroup): ViewHolder {
-                    val btn = android.widget.Button(parent.context).apply {
-                        text = "Multi-Stream"
-                        setTextColor(android.graphics.Color.WHITE)
-                        setBackgroundColor(0xFF222222.toInt())
-                        isFocusable = true
-                    }
-                    return ViewHolder(btn)
-                }
-                override fun onBindViewHolder(vh: ViewHolder, item: Any) {}
-                override fun onUnbindViewHolder(vh: ViewHolder) {}
-            })
-            multiStreamEntryAdapter.add(Object())
-            rowsAdapter.add(ListRow(HeaderItem("Multi-Stream"), multiStreamEntryAdapter))
+            val heroMatch = liveMatches.firstOrNull()
+            if (heroMatch != null) {
+                val heroAdapter = ArrayObjectAdapter(HeroBannerPresenter { match ->
+                    openDetails(match)
+                })
+                heroAdapter.add(heroMatch)
+                rowsAdapter.add(ListRow(HeaderItem(""), heroAdapter))
+            }
 
-            if (liveMatches.isNotEmpty()) {
+            val liveRest = if (liveMatches.size > 1) liveMatches.drop(1) else liveMatches
+            if (liveRest.isNotEmpty()) {
                 val liveAdapter = ArrayObjectAdapter(MatchCardPresenter())
-                liveMatches.forEach { liveAdapter.add(it) }
+                liveRest.forEach { liveAdapter.add(it) }
                 rowsAdapter.add(ListRow(HeaderItem("Live Now"), liveAdapter))
             }
 

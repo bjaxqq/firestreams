@@ -12,17 +12,13 @@ import com.bumptech.glide.Glide
 import com.firestreams.R
 import com.firestreams.data.Match
 
-class MatchCardPresenter : Presenter() {
+class HeroBannerPresenter(
+    private val onWatchClicked: (Match) -> Unit
+) : Presenter() {
 
     override fun onCreateViewHolder(parent: ViewGroup): ViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.match_card, parent, false)
-        view.isFocusable = true
-        view.isFocusableInTouchMode = true
-        view.setOnFocusChangeListener { v, hasFocus ->
-            val scale = if (hasFocus) 1.07f else 1.0f
-            v.animate().scaleX(scale).scaleY(scale).setDuration(150).start()
-        }
+            .inflate(R.layout.hero_banner, parent, false)
         return ViewHolder(view)
     }
 
@@ -30,40 +26,38 @@ class MatchCardPresenter : Presenter() {
         val match = item as Match
         val view = viewHolder.view
 
-        view.findViewById<TextView>(R.id.card_title).text = match.title
-        val categoryLabel = match.category.replaceFirstChar { it.uppercase() }
-        view.findViewById<TextView>(R.id.card_category).text = categoryLabel
+        view.findViewById<TextView>(R.id.hero_title).text = match.title
+        view.findViewById<TextView>(R.id.hero_category).text =
+            match.category.replaceFirstChar { it.uppercase() }
 
-        val liveBadge = view.findViewById<TextView>(R.id.card_live_badge)
+        val liveBadge = view.findViewById<TextView>(R.id.hero_live_badge)
         liveBadge.visibility = if (match.isLive) View.VISIBLE else View.GONE
 
-        val imageView = view.findViewById<ImageView>(R.id.card_image)
-        val sportLabel = view.findViewById<TextView>(R.id.card_sport_label)
-
+        val backdrop = view.findViewById<ImageView>(R.id.hero_backdrop)
         if (!match.poster.isNullOrEmpty()) {
-            sportLabel.visibility = View.GONE
-            imageView.background = null
-            Glide.with(view.context).load(match.poster).centerCrop().into(imageView)
+            backdrop.setImageDrawable(null)
+            backdrop.background = null
+            Glide.with(view.context).load(match.poster).centerCrop().into(backdrop)
         } else {
-            sportLabel.visibility = View.VISIBLE
-            sportLabel.text = match.category.uppercase()
-            imageView.setImageDrawable(null)
-            imageView.background = sportGradient(match.category)
+            backdrop.setImageDrawable(null)
+            backdrop.background = sportGradient(match.category)
         }
+
+        val watchBtn = view.findViewById<TextView>(R.id.hero_watch_btn)
+        watchBtn.text = if (match.isLive) "WATCH LIVE" else "WATCH"
+        watchBtn.setOnClickListener { onWatchClicked(match) }
     }
 
     override fun onUnbindViewHolder(viewHolder: ViewHolder) {
         val view = viewHolder.view
-        val imageView = view.findViewById<ImageView>(R.id.card_image)
-        Glide.with(view.context).clear(imageView)
-        imageView.setImageDrawable(null)
-        imageView.background = null
-        view.findViewById<TextView>(R.id.card_sport_label).visibility = View.GONE
+        val backdrop = view.findViewById<ImageView>(R.id.hero_backdrop)
+        Glide.with(view.context).clear(backdrop)
+        backdrop.background = null
     }
 
     private fun sportGradient(category: String): GradientDrawable {
         val cat = category.lowercase()
-        val (top, bottom) = when {
+        val (left, right) = when {
             "soccer" in cat || ("football" in cat && "american" !in cat) ->
                 Color.argb(255, 12, 48, 22) to Color.argb(255, 6, 26, 12)
             "basketball" in cat ->
@@ -80,13 +74,9 @@ class MatchCardPresenter : Presenter() {
                 Color.argb(255, 38, 8, 66) to Color.argb(255, 20, 4, 36)
             "motorsport" in cat || "f1" in cat ->
                 Color.argb(255, 88, 4, 4) to Color.argb(255, 48, 2, 2)
-            "rugby" in cat ->
-                Color.argb(255, 28, 48, 4) to Color.argb(255, 14, 26, 2)
-            "cricket" in cat ->
-                Color.argb(255, 8, 48, 18) to Color.argb(255, 4, 26, 9)
             else ->
                 Color.argb(255, 18, 18, 28) to Color.argb(255, 10, 10, 18)
         }
-        return GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(top, bottom))
+        return GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, intArrayOf(left, right))
     }
 }

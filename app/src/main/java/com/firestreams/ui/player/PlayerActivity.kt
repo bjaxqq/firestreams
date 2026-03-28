@@ -1,7 +1,8 @@
 package com.firestreams.ui.player
 
-import android.graphics.Color
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.KeyEvent
 import android.view.View
 import android.widget.TextView
@@ -24,9 +25,19 @@ class PlayerActivity : FragmentActivity() {
     private var healthMonitor: StreamHealthMonitor? = null
     private lateinit var viewModel: PlayerViewModel
 
+    private val handler = Handler(Looper.getMainLooper())
+    private val hideInfoBarRunnable = Runnable { fadeOutInfoBar() }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_player)
+
+        val title = intent.getStringExtra(EXTRA_MATCH_TITLE) ?: ""
+        val isLive = intent.getBooleanExtra(EXTRA_IS_LIVE, true)
+
+        findViewById<TextView>(R.id.player_title).text = title
+        findViewById<View>(R.id.player_live_pill).visibility =
+            if (isLive) View.VISIBLE else View.GONE
 
         val rawSources = intent.getStringArrayExtra(EXTRA_SOURCES) ?: emptyArray()
         val sources = rawSources.mapNotNull { s ->
@@ -38,19 +49,63 @@ class PlayerActivity : FragmentActivity() {
 
         viewModel.state.observe(this) { state ->
             when (state) {
-                is PlayerState.Loading -> showOverlay("Loading stream...")
-                is PlayerState.Reconnecting -> showOverlay("Reconnecting... (${state.attempt}/${state.total})")
+                is PlayerState.Loading -> showLoading("Finding stream\u2026")
+                is PlayerState.Reconnecting -> showLoading("Trying source ${state.attempt} of ${state.total}\u2026")
                 is PlayerState.Ready -> {
-                    hideOverlay()
+                    hideLoading()
                     playStream(state.streamUrl, state.embedUrl)
+                    flashInfoBar()
                 }
-                is PlayerState.Failed -> showOverlay("Stream unavailable")
+                is PlayerState.Failed -> showError("No streams available")
             }
         }
 
         if (savedInstanceState == null) {
-            viewModel.start(sources)
+            val adminSource = sources.firstOrNull { it.source.lowercase() == "admin" }
+            viewModel.start(sources, startFrom = adminSource)
         }
+    }
+
+    private fun showLoading(message: String) {
+        val loadingView = findViewById<View>(R.id.player_loading_view)
+        loadingView.visibility = View.VISIBLE
+        findViewById<TextView>(R.id.player_status_text).text = message
+    }
+
+    private fun hideLoading() {
+        findViewById<View>(R.id.player_loading_view).visibility = View.GONE
+    }
+
+    private fun showError(message: String) {
+        val loadingView = findViewById<View>(R.id.player_loading_view)
+        loadingView.visibility = View.VISIBLE
+        // Hide the spinner, keep just the text
+        loadingView.findViewById<View>(android.R.id.progress)?.visibility = View.GONE
+        findViewById<TextView>(R.id.player_status_text).text = message
+    }
+
+    private fun flashInfoBar() {
+        val bar = findViewById<View>(R.id.player_info_bar)
+        bar.visibility = View.VISIBLE
+        bar.animate().alpha(1f).setDuration(300).start()
+        handler.removeCallbacks(hideInfoBarRunnable)
+        handler.postDelayed(hideInfoBarRunnable, 4000)
+    }
+
+    private fun showInfoBar() {
+        val bar = findViewById<View>(R.id.player_info_bar)
+        bar.visibility = View.VISIBLE
+        bar.animate().cancel()
+        bar.alpha = 1f
+        handler.removeCallbacks(hideInfoBarRunnable)
+        handler.postDelayed(hideInfoBarRunnable, 4000)
+    }
+
+    private fun fadeOutInfoBar() {
+        val bar = findViewById<View>(R.id.player_info_bar)
+        bar.animate().alpha(0f).setDuration(600).withEndAction {
+            bar.visibility = View.INVISIBLE
+        }.start()
     }
 
     @OptIn(UnstableApi::class)
@@ -62,14 +117,13 @@ class PlayerActivity : FragmentActivity() {
         player = exo
 
         healthMonitor = StreamHealthMonitor(exo) { health ->
-            val dot = findViewById<View>(R.id.health_dot)
-            dot.setBackgroundColor(when (health) {
-                HealthLevel.GOOD -> Color.GREEN
-                HealthLevel.BUFFERING -> Color.YELLOW
-                HealthLevel.BAD -> Color.RED
-            })
-            if (health == HealthLevel.BAD) {
-                viewModel.tryNextSource()
+            when (health) {
+                HealthLevel.GOOD -> { /* clean video — no indicator */ }
+                HealthLevel.BUFFERING -> { /* brief buffering is normal for live HLS */ }
+                HealthLevel.BAD -> {
+                    showLoading("Reconnecting\u2026")
+                    viewModel.tryNextSource()
+                }
             }
         }
 
@@ -78,6 +132,10 @@ class PlayerActivity : FragmentActivity() {
                 viewModel.tryNextSource()
             }
         })
+
+        // Update source label in info bar
+        val sourceName = viewModel.currentSource()?.source ?: ""
+        findViewById<TextView>(R.id.player_source_label).text = sourceName
 
         val dataSource = DefaultHttpDataSource.Factory()
             .setDefaultRequestProperties(mapOf(
@@ -94,34 +152,32 @@ class PlayerActivity : FragmentActivity() {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_MENU || keyCode == KeyEvent.KEYCODE_BUTTON_SELECT) {
-            showSourcePicker()
-            return true
+        when (keyCode) {
+            KeyEvent.KEYCODE_MENU -> {
+                showSourcePicker()
+                return true
+            }
+            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
+                showSourcePicker()
+                return true
+            }
         }
+        showInfoBar()
         return super.onKeyDown(keyCode, event)
     }
 
     private fun showSourcePicker() {
         val sources = viewModel.sources()
         if (sources.isEmpty()) return
-        SourcePickerFragment.newInstance(sources) { chosen ->
+        val active = viewModel.currentSource()?.source
+        SourcePickerFragment.newInstance(sources, active) { chosen ->
             viewModel.forceSource(chosen)
         }.show(supportFragmentManager, "source_picker")
     }
 
-    private fun showOverlay(msg: String) {
-        findViewById<TextView>(R.id.status_overlay).apply {
-            text = msg
-            visibility = View.VISIBLE
-        }
-    }
-
-    private fun hideOverlay() {
-        findViewById<TextView>(R.id.status_overlay).visibility = View.GONE
-    }
-
     override fun onDestroy() {
         super.onDestroy()
+        handler.removeCallbacks(hideInfoBarRunnable)
         healthMonitor?.detach()
         player?.release()
     }
@@ -129,6 +185,7 @@ class PlayerActivity : FragmentActivity() {
     companion object {
         const val EXTRA_MATCH_ID = "match_id"
         const val EXTRA_MATCH_TITLE = "match_title"
+        const val EXTRA_IS_LIVE = "is_live"
         const val EXTRA_SOURCES = "sources"
     }
 }

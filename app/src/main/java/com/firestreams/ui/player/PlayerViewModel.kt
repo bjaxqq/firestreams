@@ -63,6 +63,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun sources(): List<Source> = _allSources
+    fun currentSource(): Source? = fallback?.current()
 
     private fun tryCurrentSource() {
         val src = fallback?.current() ?: run {

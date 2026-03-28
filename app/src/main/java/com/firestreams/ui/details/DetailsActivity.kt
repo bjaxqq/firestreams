@@ -1,7 +1,9 @@
 package com.firestreams.ui.details
 
 import android.os.Bundle
+import android.view.KeyEvent
 import androidx.fragment.app.FragmentActivity
+import com.firestreams.ui.SoundManager
 
 class DetailsActivity : FragmentActivity() {
 
@@ -13,6 +15,13 @@ class DetailsActivity : FragmentActivity() {
                 .replace(com.firestreams.R.id.details_container, DetailsFragment())
                 .commit()
         }
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_BACK || keyCode == KeyEvent.KEYCODE_ESCAPE) {
+            SoundManager.playBack()
+        }
+        return super.onKeyDown(keyCode, event)
     }
 
     companion object {

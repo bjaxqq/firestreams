@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180">
+
+    <!-- Background -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M0,0h320v180h-320z" />
+
+    <!-- Subtle red glow behind flame -->
+    <path
+        android:fillColor="#33FF3B30"
+        android:pathData="M80,90 m-42,0 a42,42 0 1,0 84,0 a42,42 0 1,0 -84,0" />
+
+    <!-- Outer flame — white -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M80,128 C62,128 50,116 50,103 C50,93 56,85 64,79 C68,76 71,72 73,67 C75,63 76,59 80,55 C84,59 85,63 87,67 C89,72 92,76 96,79 C104,85 110,93 110,103 C110,116 98,128 80,128 Z" />
+
+    <!-- Inner flame — live red -->
+    <path
+        android:fillColor="#FF3B30"
+        android:pathData="M80,118 C68,118 60,110 60,103 C60,96 64,91 69,87 C72,84 74,81 76,77 C77,75 78,73 80,71 C82,73 83,75 84,77 C86,81 88,84 91,87 C96,91 100,96 100,103 C100,110 92,118 80,118 Z" />
+
+    <!-- Streaming lines — right side -->
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="1.5"
+        android:fillColor="#00000000"
+        android:pathData="M140,72 L290,72" />
+    <path
+        android:strokeColor="#CCFFFFFF"
+        android:strokeWidth="1.5"
+        android:fillColor="#00000000"
+        android:pathData="M140,90 L290,90" />
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="1.5"
+        android:fillColor="#00000000"
+        android:pathData="M140,108 L290,108" />
+
+    <!-- Short accent lines — gives depth -->
+    <path
+        android:strokeColor="#66FF3B30"
+        android:strokeWidth="1"
+        android:fillColor="#00000000"
+        android:pathData="M140,81 L230,81" />
+    <path
+        android:strokeColor="#66FF3B30"
+        android:strokeWidth="1"
+        android:fillColor="#00000000"
+        android:pathData="M140,99 L230,99" />
+
+    <!-- Red dot accent on each main line -->
+    <path
+        android:fillColor="#FF3B30"
+        android:pathData="M136,72 m-4,0 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0" />
+    <path
+        android:fillColor="#FF3B30"
+        android:pathData="M136,90 m-4,0 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0" />
+    <path
+        android:fillColor="#FF3B30"
+        android:pathData="M136,108 m-4,0 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0" />
+
+</vector>
